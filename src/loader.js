@@ -1,99 +1,122 @@
-//L.require(mod or url,callBack);
+/**
+ * @author bh-lay
+ * @git : https://github.com/bh-lay/loader
+ * 
+ * @demo
+ * var require = new loader({ 
+ * 	'lanternJS' : '/src/js/lantern.js',
+ * 	'lanterncss' : '/src/css/lantern.css',
+ * 	'lofox' : '/src/js/lofox.js'
+ * });
+ * require.load('lanternJS',callBack);
+ * require.load('lanternCSS,lofox',callBack);
+ * require.load('/src/js/lantern.js,/src/js/lofox.js',callBack);
+ */
+function loader(config){
+	this.CONF = config;
+}
 
-(function(ex){
-//	var conf = {
-//		'lantern': {'js':'/skin/js/lib/lantern.js'},
-//		'juicer'	: {'js':'/skin/js/lib/juicer.js'},
-//		'dialog'	: {'js':'/skin/js/lib/dialog.js'},
-//		'lofox'	: {'js':'/skin/js/lib/lofox.js'},
-//		'codeArea'	: {'js':'/skin/js/lib/codeArea.js'}
-//	};
-	var conf = null;
-	function loadJs(url,fn){
-		console.log('require','load JS file [' + url + ']');
-		$.get(url,function(){
+(function(exports){
+	var loadHistory = {};
+	
+	function loadJS(url,fn){		
+		$.getScript(url,function(){
 			fn&&fn();
 		});
 	}
 	function loadCSS(url,callback){
-		console.log('require','load CSS file [' + url + ']');
-		if($('link[href="' + url + '"]').length == 0){
-			$('head').append('<link href="' + url + '" type="text/css" rel="stylesheet">');
-			callback&&callback();
+		$('head').append('<link href="' + url + '" type="text/css" rel="stylesheet">');
+		callback&&callback();
+	}
+	//开始加载文件
+	function load_start(url,callback){
+		var ext = url.match(/\..+$/)[0];
+		if(ext == '.css'){
+			loadCSS(url,function(){
+				callback&&callback(null);
+			});
+		}else if(ext == '.js'){
+			loadJS(url,function(){
+				callback&&callback(null);
+			});
 		}else{
-			console.log('require','[' + url + '] has been loaded, needn\'t to load again ！');
-			callback&&callback();
+			callback&&callback('could not support this type file');
 		}
 	}
-	var start = function(str,callback){
-		str = str || '';
-		str = str.split(/\?/)[0]||'';
-		var str_spilt = str.split(/\./);
-		var callback = callback||function(){};
-
-		if(str_spilt.length == 1){
-			//repuire from config
-			var modName = str;
-			var module = conf[modName];
-			if(!module){
-				console.log('require','could not find module please check mod spell ！');
-				return
-			}
-			switch (module['load']){
-				case 'done':
-					console.log('require','[' + modName + '] has been loaded, needn\'t to load again ！');
-					callback();
-				break
-				case 'loading':
-					var wait = setInterval(function(){
-						if(conf[modName]['load'] = 'done'){
-							clearInterval(wait);
-							callback();
-						}
-					},100);
-				break
-				default :
-					console.log('require:','loading start !');
-					var url = module['js'];
-					conf[modName]['load'] = 'loading';
-					loadJs(url,function(){
-						conf[modName]['load'] = 'done';
-						callback()
-					});
-			}
+	//检测加载历史，并响应加载
+	function loading(url,callback){
+//		console.log('loader','load check:',url);
+		loadHistory[url] = loadHistory[url] || 'waiting';
+		switch (loadHistory[url]){
+			case 'done':
+				//已经加载过该文件
+				callback&&callback(null);
+			break
+			case 'loading':
+				//正在加载,等待加载完成
+				var wait = setInterval(function(){
+					if(loadHistory[url] = 'done'){
+						clearInterval(wait);
+						callback&&callback(null);
+					}
+				},100);
+			break
+			case 'waiting':
+//				console.log('loader','loading:',url);
+				//准备加载
+				loadHistory[url] = 'loading';
+				load_start(url,function(err){
+//					console.log('loader','loaded:',url);
+					loadHistory[url] = 'done';
+					callback&&callback(err);
+				});
+			break
+		}
+	}
+	var filter_url = function(str,callback){
+		//过滤url search参数
+		var str = str ? str.split(/\?/)[0] : '';
+		
+		if(str.match(/\..+$/)){
+			//参数为地址
+			callback&&callback(null,url);
 		}else{
-			//repuire from url
-			var url = str;
-			var ext = str_spilt[1];
-			if(ext == 'css'){
-				loadCSS(url,callback);
-			}else if(ext == 'js'){
-				loadJs(url,callback);
+			//参数为模块名
+			var modName = str;
+			var url = this.CONF[modName] || null;
+			if(!url){
+				callback&&callback('could not find module please check mod spell');
 			}else{
-				console.log('require','could not support this type module ！');
+				callback&&callback(null,url);
 			}
 		}
 	};
-	var require = function(str,callback){
-		console.log('require:','start with [' + str + ']');
-		var str = str||'',
-			callback = callback || function(){},
-			mod_list = str.split(/\,/),
-			len = mod_list.length;
-		
-		if(len == 1){
-			start(mod_list[0],callback);
-		}else{
-			var complete_num = 0;
-			for(var i = 0;i<len;i++){
-				start(mod_list[i],function(){
+	exports.prototype.load = function(str,callback){
+		//参数不存在或为空时，结束程式
+		if(!str || str.length < 1){
+			return
+		}
+		var callback = callback || null;
+		//尝试拆分参数
+		var list = str.split(/\,/),
+			 len = list.length;
+		//完成数
+		var complete_num = 0;
+		//错误数
+		var error_num = 0;
+		for(var i = 0;i<len;i++){
+			filter_url.call(this,list[i],function(err,url){
+				loading(url,function(err){
+					if(err){
+						error_num++;
+					}
 					complete_num++;
+					console.log(url,complete_num);
 					if(complete_num == len){
-						callback();
+						callback&&callback(error_num);
 					}
 				});
-			}
+			});
 		}
-	}
-	ex.require = require;
-}(L));
+	};
+}(loader));
