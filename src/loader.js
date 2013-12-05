@@ -1,5 +1,5 @@
 /**
- * @author bh-lay
+ *	@author bh-lay
  * @git : https://github.com/bh-lay/loader
  * 
  * @demo
@@ -12,15 +12,12 @@
  * require.load('lanternCSS,lofox',callBack);
  * require.load('/src/js/lantern.js,/src/js/lofox.js',callBack);
  */
-function loader(config){
-	this.CONF = config;
-}
 
 (function(exports){
 	var loadHistory = {};
 	
-	function loadJS(url,fn){		
-		$.getScript(url,function(){
+	function loadJS(url,fn){
+		$.get(url,function(){
 			fn&&fn();
 		});
 	}
@@ -28,7 +25,7 @@ function loader(config){
 		$('head').append('<link href="' + url + '" type="text/css" rel="stylesheet">');
 		callback&&callback();
 	}
-	//开始加载文件
+	//start loading 
 	function load_start(url,callback){
 		var ext = url.match(/\..+$/)[0];
 		if(ext == '.css'){
@@ -43,17 +40,17 @@ function loader(config){
 			callback&&callback('could not support this type file');
 		}
 	}
-	//检测加载历史，并响应加载
+	//check history load state
 	function loading(url,callback){
 //		console.log('loader','load check:',url);
 		loadHistory[url] = loadHistory[url] || 'waiting';
 		switch (loadHistory[url]){
 			case 'done':
-				//已经加载过该文件
+				//already loaded
 				callback&&callback(null);
 			break
 			case 'loading':
-				//正在加载,等待加载完成
+				//is loading waiting
 				var wait = setInterval(function(){
 					if(loadHistory[url] = 'done'){
 						clearInterval(wait);
@@ -63,7 +60,6 @@ function loader(config){
 			break
 			case 'waiting':
 //				console.log('loader','loading:',url);
-				//准备加载
 				loadHistory[url] = 'loading';
 				load_start(url,function(err){
 //					console.log('loader','loaded:',url);
@@ -74,14 +70,14 @@ function loader(config){
 		}
 	}
 	var filter_url = function(str,callback){
-		//过滤url search参数
+		//filter url search
 		var str = str ? str.split(/\?/)[0] : '';
 		
 		if(str.match(/\..+$/)){
-			//参数为地址
+			//param is url
 			callback&&callback(null,url);
 		}else{
-			//参数为模块名
+			//param is module name
 			var modName = str;
 			var url = this.CONF[modName] || null;
 			if(!url){
@@ -91,18 +87,21 @@ function loader(config){
 			}
 		}
 	};
-	exports.prototype.load = function(str,callback){
-		//参数不存在或为空时，结束程式
+	function LOADER(config){
+		this.CONF = config;
+	}
+	LOADER.prototype.load = function(str,callback){
+		//param is not exist or null  end this Fn
 		if(!str || str.length < 1){
 			return
 		}
 		var callback = callback || null;
-		//尝试拆分参数
+		//split param
 		var list = str.split(/\,/),
 			 len = list.length;
-		//完成数
+		//complete num
 		var complete_num = 0;
-		//错误数
+		//error num
 		var error_num = 0;
 		for(var i = 0;i<len;i++){
 			filter_url.call(this,list[i],function(err,url){
@@ -111,7 +110,7 @@ function loader(config){
 						error_num++;
 					}
 					complete_num++;
-					console.log(url,complete_num);
+			//		console.log(url,complete_num);
 					if(complete_num == len){
 						callback&&callback(error_num);
 					}
@@ -119,4 +118,32 @@ function loader(config){
 			});
 		}
 	};
-}(loader));
+	LOADER.prototype.image = function (src,parm){
+		var parm = parm||{},
+			 loadFn = parm['loadFn'] || null,
+			 sizeFn = parm['sizeFn'] || null,
+			 errorFn = parm['errorFn'] || null;
+		
+		var img = new Image();
+		if(errorFn){
+			img.onerror = function(){
+				errorFn();
+			}
+		};
+		if(loadFn){
+			img.onload = function(){
+				loadFn(img.width,img.height);
+			}
+		}
+		if(sizeFn){
+			var timer = setInterval(function(){
+				if(img.width>1){
+					clearInterval(timer);
+					sizeFn(img.width,img.height);
+				}
+			},2);
+		}
+		img.src=src;
+	};
+	exports.loader = exports.loader || LOADER;
+}(window));
