@@ -17,15 +17,18 @@
 	var loadHistory = {};
 	
 	function loadJS(url,fn){
-		$.get(url,function(){
-			fn&&fn();
+		$.ajax({
+			'url' : url,
+			'success' : function(){
+				fn&&fn();
+			}
 		});
 	}
-	function loadCSS(url,callback){
+	function loadCSS(url,fn){
 		$('head').append('<link href="' + url + '" type="text/css" rel="stylesheet">');
-		callback&&callback();
+		fn&&fn();
 	}
-	//start loading 
+	//start loading
 	function load_start(url,callback){
 		var ext = url.match(/\..+$/)[0];
 		if(ext == '.css'){
@@ -72,10 +75,9 @@
 	var filter_url = function(str,callback){
 		//filter url search
 		var str = str ? str.split(/\?/)[0] : '';
-		
 		if(str.match(/\..+$/)){
 			//param is url
-			callback&&callback(null,url);
+			callback&&callback(null,str);
 		}else{
 			//param is module name
 			var modName = str;
@@ -88,7 +90,7 @@
 		}
 	};
 	function LOADER(config){
-		this.CONF = config;
+		this.CONF = config || {};
 	}
 	LOADER.prototype.load = function(str,callback){
 		//param is not exist or null  end this Fn
@@ -118,6 +120,36 @@
 			});
 		}
 	};
+	/*
+	LOADER.prototype.loadSync = function(str,callback){
+			//param is not exist or null  end this Fn
+		if(!str || str.length < 1){
+			return
+		}
+		var callback = callback || null;
+		//split param
+		var list = str.split(/\,/),
+			 len = list.length;
+		//complete num
+		var complete_num = 0;
+		//error num
+		var error_num = 0;
+		for(var i = 0;i<len;i++){
+			filter_url.call(this,list[i],function(err,url){
+				loading(url,function(err){
+					if(err){
+						error_num++;
+					}
+					complete_num++;
+			//		console.log(url,complete_num);
+					if(complete_num == len){
+						callback&&callback(error_num);
+					}
+				});
+			});
+		}
+	};
+	*/
 	LOADER.prototype.image = function (src,parm){
 		var parm = parm||{},
 			 loadFn = parm['loadFn'] || null,
@@ -146,4 +178,4 @@
 		img.src=src;
 	};
 	exports.loader = exports.loader || LOADER;
-}(window));
+})(window);
