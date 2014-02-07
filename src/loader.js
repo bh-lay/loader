@@ -15,18 +15,44 @@
 
 (function(exports){
 	var loadHistory = {};
+	//定义私有变量
+	var private_doc = document;
+	var private_loader = private_doc.createElement('div');
+	var private_body = private_doc.getElementsByTagName('body')[0];
 	
+	//初始化loader的dom环境
+	private_loader.setAttribute('data-module' , 'loader');
+	private_loader.style.display = 'none';
+	private_body.appendChild(private_loader);
+	
+	//加载javascript
 	function loadJS(url,fn){
+		var script = private_doc.createElement('script');
+		script.type = 'text/javascript';
+		script.onload = function() {
+			fn&&fn();
+		};
+		script.src = url;
+		private_loader.appendChild(script);
+	}
+	//加载CSS
+	function loadCSS(url,fn){
+		var link = private_doc.createElement('link');
+		link.type = 'text/css';
+		link.rel = 'stylesheet';
+		link.onload = function() {
+			fn&&fn();
+		};
+		link.href = url;
+		private_loader.appendChild(link);
+	}
+	function loadTXT(url,fn){
 		$.ajax({
 			'url' : url,
-			'success' : function(){
-				fn&&fn();
+			'success' : function(d){
+				fn&&fn(d);
 			}
 		});
-	}
-	function loadCSS(url,fn){
-		$('head').append('<link href="' + url + '" type="text/css" rel="stylesheet">');
-		fn&&fn();
 	}
 	//start loading
 	function load_start(url,callback){
@@ -40,7 +66,9 @@
 				callback&&callback(null);
 			});
 		}else{
-			callback&&callback('could not support this type file');
+			loadTXT(url,function(txt){
+				callback&&callback(null,txt);
+			});
 		}
 	}
 	//check history load state
@@ -64,10 +92,14 @@
 			case 'waiting':
 //				console.log('loader','loading:',url);
 				loadHistory[url] = 'loading';
-				load_start(url,function(err){
+				load_start(url,function(err,txt){
 //					console.log('loader','loaded:',url);
 					loadHistory[url] = 'done';
-					callback&&callback(err);
+					if(txt){
+						callback&&callback(err);
+					}else{
+						callback&&callback();
+					}
 				});
 			break
 		}
@@ -107,14 +139,14 @@
 		var error_num = 0;
 		for(var i = 0;i<len;i++){
 			filter_url.call(this,list[i],function(err,url){
-				loading(url,function(err){
+				loading(url,function(err,txt){
 					if(err){
 						error_num++;
 					}
 					complete_num++;
 			//		console.log(url,complete_num);
 					if(complete_num == len){
-						callback&&callback(error_num);
+						callback&&callback(txt);
 					}
 				});
 			});
