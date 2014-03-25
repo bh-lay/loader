@@ -1,6 +1,7 @@
 /**
  *	@author bh-lay
  * @git : https://github.com/bh-lay/loader
+ * @modified 2014-3-25 11:39
  * 
  * @demo
  * var require = new loader({ 
@@ -25,29 +26,71 @@
 	private_loader.style.display = 'none';
 	private_body.appendChild(private_loader);
 	
+	//增加url版本号
+	function addVersion(url){
+		var output = '';
+		if(url.match(/\?/)){
+			output = url + '&vsi=' + LOADER.cacheVsi;
+		}else{
+			output = url + '?vsi=' + LOADER.cacheVsi;
+		}
+		return output;
+	}
+	
 	//加载javascript
 	function loadJS(url,fn){
+		var url = addVersion(url);
 		var script = private_doc.createElement('script');
 		script.type = 'text/javascript';
 		script.charset = 'UTF-8';
-		script.onload = function() {
-			fn&&fn();
-		};
+		if(typeof(script.onload) == 'undefined'){
+			setTimeout(function(){
+				fn&&fn();
+			},2000);
+	/*
+			$.getScript(url,function(){
+				fn&&fn();
+			});
+	*/
+		}else{
+			script.onload = function() {
+				fn&&fn();
+			};
+		}
 		script.src = url;
 		private_loader.appendChild(script);
 	}
 	//加载CSS
 	function loadCSS(url,fn){
+		var url = addVersion(url);
 		var link = private_doc.createElement('link');
 		link.type = 'text/css';
 		link.rel = 'stylesheet';
+		
+		/**
+		 * 部分浏览器对link的onload事件支持不完全
+		 * 不能单纯的通过link.onload检测是否支持
+		 * 如果您有好的办法解决此问题，请 @俺是剧中人
+		 */
+		var isLoad = false;
 		link.onload = function() {
-			fn&&fn();
+			if(!isLoad){
+				isLoad = true;
+				fn&&fn();
+			}
 		};
+		setTimeout(function(){
+			if(!isLoad){
+				isLoad = true;
+				fn&&fn();
+			}
+		},1000);
+		
 		link.href = url;
 		private_loader.appendChild(link);
 	}
 	function loadTXT(url,fn){
+		var url = addVersion(url);
 		$.ajax({
 			'url' : url,
 			'success' : function(d){
@@ -125,6 +168,9 @@
 	function LOADER(config){
 		this.CONF = config || {};
 	}
+	
+	LOADER.cacheVsi = 'v0.01';
+	
 	LOADER.prototype.load = function(str,callback){
 		//param is not exist or null  end this Fn
 		if(!str || str.length < 1){
@@ -140,14 +186,15 @@
 		var error_num = 0;
 		for(var i = 0;i<len;i++){
 			filter_url.call(this,list[i],function(err,url){
-				loading(url,function(err,txt){
+				loading(url,function(err){
 					if(err){
 						error_num++;
 					}
 					complete_num++;
+					
 			//		console.log(url,complete_num);
 					if(complete_num == len){
-						callback&&callback(txt);
+						callback&&callback();
 					}
 				});
 			});
