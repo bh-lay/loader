@@ -1,7 +1,7 @@
 /**
  *	@author bh-lay
  * @git : https://github.com/bh-lay/loader
- * @modified 2014-3-25 11:39
+ * @modified 2014-5-20 10:25
  * 
  * @demo
  * var require = new loader({ 
@@ -43,20 +43,20 @@
 		var script = private_doc.createElement('script');
 		script.type = 'text/javascript';
 		script.charset = 'UTF-8';
-		if(typeof(script.onload) == 'undefined'){
-			setTimeout(function(){
-				fn&&fn();
-			},2000);
-	/*
-			$.getScript(url,function(){
-				fn&&fn();
-			});
-	*/
-		}else{
-			script.onload = function() {
-				fn&&fn();
-			};
-		}
+		
+		if (script.readyState){  //IE  
+			script.onreadystatechange = function(){  
+				if (script.readyState == "loaded" || script.readyState == "complete"){  
+					script.onreadystatechange = null;  
+					fn&&fn();
+				}  
+			};  
+		} else {  //Others  
+			script.onload = function(){  
+				fn&&fn(); 
+			};  
+		}  
+		
 		script.src = url;
 		private_loader.appendChild(script);
 	}
