@@ -1,4 +1,4 @@
-> 项目已停止更新。若仅需要JS、CSS、image的加载，loader能很完美的胜任，若对模块化要求更高，loader无能为力。因为loader仅仅处理了模块加载，并未解决模块管理、打包等功能。项目作为本人成长过程中的一个产物，的确从中学到了不少。相关推荐：[seajs](http://seajs.org/)、[requirejs](http://requirejs.org/)。
+> 项目已停止更新。若仅需要JS、CSS、image的加载，loader能很完美的胜任，若对模块化要求更高，loader无能为力。因为loader仅处理了模块加载，并未解决模块管理功能。项目作为本人成长过程中的一个产物，从中学到了不少。相关推荐：[seajs](http://seajs.org/)、[requirejs](http://requirejs.org/)。
 
 
 #一、简介
@@ -28,7 +28,7 @@ loader是一个用于加载项目资源的工具，用于剥离文件间的耦�
 ##1.5、关于作者
 
 ```javascript
-  var ihubo = {
+  var lay = {
     nickName  : "剧中人",
     site : "http://bh-lay.com/"
   }
