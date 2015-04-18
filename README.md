@@ -1,4 +1,4 @@
-> 目前项目已停止更新。如果仅处理JS、CSS、image的加载，loader完全能很完美的胜任，若对模块化要求更高，loader目前无能为力。因为loader仅仅处理了模块加载，并未解决模块管理，及后续的打包等功能。项目作为本人成长过程中的一个产物，的确从中学到了不少。相关推荐[seajs](http://seajs.org/) [requirejs](http://requirejs.org/)
+> 项目已停止更新。若仅需要JS、CSS、image的加载，loader能很完美的胜任，若对模块化要求更高，loader无能为力。因为loader仅仅处理了模块加载，并未解决模块管理、打包等功能。项目作为本人成长过程中的一个产物，的确从中学到了不少。相关推荐：[seajs](http://seajs.org/)、[requirejs](http://requirejs.org/)。
 
 
 #一、简介
